@@ -69,6 +69,10 @@ app.post('/api/login', async (req, res) => {
                     email: user.email,
                 },
                 'secret123'
+                // Create better secret token and refresh token using node's built in 
+                // require('crypto').randomBytes(64).toString('hex')
+                // command in terminal.
+                //
             )
                 
             return res.json({ status: 'ok', user: token })
