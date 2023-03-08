@@ -95,6 +95,8 @@ router.post('/login', async (req, res) => {
     // }
 })
 
+// to clear database in easier one command for dev purposes only
+//  will delete later
 router.delete('/deleteAll', async (res, req) => {
     const user = await User.deleteMany()
 })
