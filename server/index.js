@@ -6,13 +6,16 @@ const User = require('./models/User')
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
 const apiRoutes = require('./routes/api/apiRoutes')
-const { typeDefs, resolvers } = require('./schemas/index')
+const userRoutes = require('./routes/client/userRoutes')
+// const { typeDefs, resolvers } = require('./schemas/index');
+const { schema } = require('./schemas/index');
+
+const { graphqlHTTP } = require('express-graphql');
 
 dotenv.config();
 
 
 
-// const httpServer = http.createServer(app);
 
 // Routes
 app.get('/home', (req, res) => {
@@ -23,6 +26,11 @@ app.get('/home', (req, res) => {
 // Middleware Connections
 app.use(cors())
 app.use(express.json())
+// app.use('/', userRoutes)
+app.use('/graphql', graphqlHTTP({
+    schema,
+    graphiql: process.env.NODE_ENV === 'development'
+}))
 
 app.use('/api', apiRoutes)
 

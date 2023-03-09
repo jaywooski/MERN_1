@@ -20,9 +20,13 @@ const TaskSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         required: true
+    },
+    // References user that tasks belong to based on ID
+    userID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserData'
     }
 
-    // user it belongs to as property will be implemented later
 })
 
 const task = mongoose.model('TasksData', TaskSchema);
