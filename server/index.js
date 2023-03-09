@@ -2,13 +2,22 @@ const express = require('express');
 const { Connection }  = require('./database/db.js');
 const app = express();
 const cors = require('cors');
-const User = require('./models/userSchema')
+const User = require('./models/User')
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
 const apiRoutes = require('./routes/api/apiRoutes')
-
+const { typeDefs, resolvers } = require('./schemas/index')
 
 dotenv.config();
+
+
+
+// const httpServer = http.createServer(app);
+
+// Routes
+app.get('/home', (req, res) => {
+    res.send('JayWoo says Hello World!')
+})
 
 
 // Middleware Connections
@@ -17,11 +26,6 @@ app.use(express.json())
 
 app.use('/api', apiRoutes)
 
-
-// Routes
-app.get('/home', (req, res) => {
-    res.send('JayWoo says Hello World!')
-})
 
 
 // Connection

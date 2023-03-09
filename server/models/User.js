@@ -16,7 +16,13 @@ const UserSchema = new mongoose.Schema({
     },
     quote: {
         type: String
-    }
+    },
+    tasks: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'TasksData'
+        }
+    ]
 })
 
 const user = mongoose.model('UserData', UserSchema);

@@ -22,7 +22,7 @@ const TaskSchema = new mongoose.Schema({
         required: true
     }
 
-    // user it belongs to as prop will be implemented later
+    // user it belongs to as property will be implemented later
 })
 
 const task = mongoose.model('TasksData', TaskSchema);
