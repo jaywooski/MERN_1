@@ -176,54 +176,25 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                 },
                 userID: { type: new GraphQLNonNull(GraphQLString) }
             },
-            resolve(parent, args) {
-                const task = new Task({
-
-                    action: args.action,
-                    deadline: args.deadline,
-                    completed: args.completed,
-                    createdAt: args.createdAt,
-                    userID: args.userID
-                })
+            resolve(parent, args) { /*doesn't have to be asynchronous here */
+                try {
+                    const task = new Task({
+    
+                        action: args.action,
+                        deadline: args.deadline,
+                        completed: args.completed,
+                        createdAt: args.createdAt,
+                        userID: args.userID
+                    })
+                    
+                    return task.save()
+                    
+                } catch (error) {
+                    throw new Error('Something went wrong, trying to create your new task!')
+                }
                 
-                // parent.tasks.push(task);
-                return task.save()
-                // return task
             }
         },
-
-        // addTask trial #2
-        // addTasktoUser: {
-        //     type: GraphQLInputObjectType( TaskType ),
-        //     args: {
-        //         id: { type: GraphQLNonNull(GraphQLID) }, 
-        //     /* We want id to be ^not null^ so we 
-        //         can find by ID to update */
-
-        //         name: { type: GraphQLString },
-        //         email: { type: GraphQLString },
-        //         password: { type: GraphQLString },
-        //         tasks: { 
-        //             type: GraphQLList(UserType),
-        //             // defaultValue: [...tasks]
-        //         }
-        //     },
-        //     resolve(parent, args) {
-        //         return User.findByIdAndUpdate(
-        //             args.id,
-        //             {
-        //                 $set: {
-        //                     tasks: [...tasks, args.tasks]
-        //                 }
-        //             },
-        //             // This 'new' is set to true in case the 
-        //             // property doesn't exist it will create
-        //             //  a new one
-        //             { new: true }
-        //         )
-        //     }
-        // },
-
 
         deleteTask: {
             type: TaskType,
@@ -234,6 +205,8 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                 return Task.findByIdAndRemove(args.id)
             }
         },
+
+        
         updateTask: {
             type: TaskType,
             args: {
@@ -255,6 +228,35 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                     },
                     { new: true }
                 )
+            }
+        },
+
+        deleteAllTasks: {
+            type: GraphQLString, /* Using string type because I want to return a message(string) instead of a data type */
+            args: { 
+                userID: { type: GraphQLNonNull(GraphQLString) }
+            },
+            async resolve(parent, {userID}/*args destructured to use just userID attribute */) {
+                try {
+
+                    if (!userID) {
+                        throw new Error('User ID must be provided');
+                    }
+                    
+                                        
+                    const result = await Task.deleteMany({ userID });
+
+                    if (result.deletedCount > 0 ) {
+                        /*deletedCount is a built in method/property on mongoose object using deleteMany() */
+
+                        return "All tasks deleted successfully!" 
+                    } else {
+                        return 'There are no tasks to delete!'
+                    }
+                    
+                } catch (error) {
+                    throw new Error('Something went wrong..')
+                }
             }
         }
     }
