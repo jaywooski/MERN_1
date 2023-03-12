@@ -8,7 +8,7 @@ const TaskSchema = new mongoose.Schema({
     },
     // deadline, if neccessary
     deadline: {
-        type: Date,
+        type: String,
         required: false
     },
     // isCompleted... true or false?
@@ -18,13 +18,14 @@ const TaskSchema = new mongoose.Schema({
     },
     // time created
     createdAt: {
-        type: Date,
+        type: String,
         required: true
     },
     // References user that tasks belong to based on ID
     userID: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'UserData'
+        ref: 'UserData',
+        required: true
     }
 
 })
