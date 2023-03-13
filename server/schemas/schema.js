@@ -1,4 +1,11 @@
 const { User, Task } = require("../models");
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+const SECRET_KEY = process.env.SECRET_KEY;
+
+dotenv.config()
+
 const { 
     GraphQLObjectType, 
     GraphQLID, 
@@ -8,7 +15,8 @@ const {
     GraphQLList,
     GraphQLNonNull,
     GraphQLScalarType,
-    GraphQLInputObjectType
+    GraphQLInputObjectType,
+    GraphQLError, 
 } = require("graphql");
 
 const UserType = new GraphQLObjectType({
@@ -23,8 +31,6 @@ const UserType = new GraphQLObjectType({
             type: new GraphQLList(TaskType),
             resolve(parent /*arguments */, { id } /* parent*/ ) {
                 return Task.find({ userId: parent.id})
-                // return [...parent.tasks, userID]
-
             }
         }
 
@@ -48,6 +54,14 @@ const TaskType = new GraphQLObjectType({
         }
     })
 })
+
+const LoginResponse = new GraphQLObjectType({
+    name: 'LoginResponse',
+    fields: () => ({
+      accessToken: { type: GraphQLString },
+      message: { type: GraphQLString}
+    })
+});
 
 
 // root query object
@@ -112,16 +126,95 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                 email: { type: GraphQLNonNull(GraphQLString) },
                 password: { type: GraphQLNonNull(GraphQLString) },
             },
-            resolve(parent, args) {
-                const user = new User({
-                    name: args.name,
-                    email: args.email,
-                    password: args.password
-                });
+            async resolve(parent, args) {
+                try {
+                    const salt = await bcrypt.genSalt()
+                    const hashedPassword = await bcrypt.hash(args.password, salt)
+                    const user = new User({
+                        name: args.name,
+                        email: args.email,
+                        password: hashedPassword
+                    });
 
-                return user.save();
+                    return user.save();
+
+                } catch (error) {
+                    return res.status(500).json({
+                        message: 'Something went wrong!',
+                        error: error.message
+                    })
+                }
+
             }
         },
+
+        login: {
+            type: LoginResponse,
+            args: {
+                email: { type: new GraphQLNonNull(GraphQLString) },
+                password: { type: new GraphQLNonNull(GraphQLString) },
+
+            },
+            async resolve(parent, args /* destructuring username and password for args param */) {
+                    try {
+                        const { email, password } = args;
+                        const user = await User.findOne({ email });
+        
+                        if (!user) {
+                            throw new Error('Invalid login credentials')
+                        }
+        
+                        const isPasswordMatch = await bcrypt.compare(password, user.password);
+                        if (!isPasswordMatch) {
+                            throw new GraphQLError('Invalid email or password!');
+                        }
+                        
+                        const accessToken = jwt.sign({ username: user.email }, SECRET_KEY/* secret key */, { expiresIn: '1d'});
+        
+                        const hashedToken = bcrypt.hashSync(accessToken, 10)
+                        
+                        // user.cookie('accessToken', hashedToken, { httpOnly: true }) 
+                        /* Save accessToken as cookie when come back */
+
+                        return {
+                            accessToken: hashedToken,
+                            message: "Login Successful!"
+                        };
+                        // return { accessToken };
+                    }
+                    catch (error) {
+                        return new GraphQLError(error.message)
+                    }
+                },
+
+        logout: {
+            type: GraphQLString,
+            args: {
+                userID: { type: GraphQLString }
+            },
+            async resolve(parent, args, context) {
+
+                try {
+                    const user = await User.findById(args.userID);
+                    
+                    if (!user.accessToken) {
+                    throw new Error('User not found');
+                    }
+                    user.accessToken = null;
+                    await user.save();
+                    return 'Logout Successful';
+                } 
+                catch (error) {
+                    console.error(error);
+                    throw new Error('Failed to clear token from database');
+                }
+                
+                
+                // context.res.cookie('jwt', '', { httpOnly: true });
+            }
+        },
+
+
         deleteUser: {
             type: UserType,
             args: {
@@ -260,6 +353,7 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
             }
         }
     }
+}
 })
 
 module.exports = new GraphQLSchema({

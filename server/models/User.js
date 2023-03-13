@@ -14,6 +14,9 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    accessToken: {
+        type: String
+    },
     quote: {
         type: String
     },

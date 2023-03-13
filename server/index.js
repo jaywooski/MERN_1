@@ -7,10 +7,9 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv')
 const apiRoutes = require('./routes/api/apiRoutes')
 const userRoutes = require('./routes/client/userRoutes')
-// const { typeDefs, resolvers } = require('./schemas/index');
 const { schema } = require('./schemas/index');
-
 const { graphqlHTTP } = require('express-graphql');
+const authMiddleware = require('./util/auth')
 
 dotenv.config();
 
@@ -27,8 +26,9 @@ app.get('/home', (req, res) => {
 app.use(cors())
 app.use(express.json())
 // app.use('/', userRoutes)
-app.use('/graphql', graphqlHTTP({
+app.use('/graphql', /* authMiddleware,  passing in jwt authentication middleware */ graphqlHTTP({
     schema,
+    context: { authMiddleware } ,
     graphiql: process.env.NODE_ENV === 'development'
 }))
 
