@@ -1,7 +1,8 @@
-GET http://localhost:5000/home
+GET http://localhost:5000/graphql/user
+Authorization: Bearer
 
 ###
-POST http://localhost:5000/api/login
+POST http://localhost:5000/graphql/login
 Content-Type: application/json
 
 {

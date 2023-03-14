@@ -9,6 +9,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 function Auth(req, res, next) {
     
     const authorization = req.headers.authorization;
+    // Check to see if you have a header
     if (!authorization) {
         console.log(req.headers)
         return res.status(401).json({
@@ -16,12 +17,16 @@ function Auth(req, res, next) {
         })
     }
     try {
+        // Split header 
         const token = authorization.split('Bearer ')[1];
+
+        // Check to see if token is null or not
         if (!token) {
             return res.status(401).json({
                 message: 'Invalid Token Format'
             })
         }
+        /*****************************************************STOPPING POINT RIGHT HEREEEEEE */
         const decode = jwt.verify(token, SECRET_KEY);
         req.user = decode
         next()

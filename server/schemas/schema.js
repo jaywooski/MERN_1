@@ -1,8 +1,10 @@
 const { User, Task } = require("../models");
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken');
+const express = require('express')
 const dotenv = require('dotenv');
 const SECRET_KEY = process.env.SECRET_KEY;
+const REFRESH_KEY = process.env.REFRESH_KEY;
 
 dotenv.config()
 
@@ -59,6 +61,7 @@ const LoginResponse = new GraphQLObjectType({
     name: 'LoginResponse',
     fields: () => ({
       accessToken: { type: GraphQLString },
+      refreshToken: { type: GraphQLString },
       message: { type: GraphQLString}
     })
 });
@@ -118,7 +121,7 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
 
         // ***** User mutations *******
 
-        registerUser: {
+        register: {
             type: UserType,
             args: {
                 /* Use of 'GraphQlNonNull is equivalent to having field set to required */
@@ -155,7 +158,7 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                 password: { type: new GraphQLNonNull(GraphQLString) },
 
             },
-            async resolve(parent, args /* destructuring username and password for args param */) {
+            async resolve(parent, args /* destructuring username and password for args param */, { res }) {
                     try {
                         const { email, password } = args;
                         const user = await User.findOne({ email });
@@ -169,15 +172,20 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                             throw new GraphQLError('Invalid email or password!');
                         }
                         
-                        const accessToken = jwt.sign({ username: user.email }, SECRET_KEY/* secret key */, { expiresIn: '1d'});
-        
+                        const accessToken = jwt.sign({ username: user.email }, SECRET_KEY/* secret key */, { expiresIn: '15s'});
+                        const refreshToken = jwt.sign({ username: user.email }, REFRESH_KEY/* refresh key */ )
                         const hashedToken = bcrypt.hashSync(accessToken, 10)
                         
-                        // user.cookie('accessToken', hashedToken, { httpOnly: true }) 
+                        // console.log(document.cookie);
+
+                        // res.cookie('accessToken', hashedToken, { httpOnly: true }) 
+
                         /* Save accessToken as cookie when come back */
 
                         return {
-                            accessToken: hashedToken,
+                            // accessToken: hashedToken,
+                            accessToken: accessToken,
+                            refreshToken: refreshToken,
                             message: "Login Successful!"
                         };
                         // return { accessToken };
@@ -192,7 +200,7 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
             args: {
                 userID: { type: GraphQLString }
             },
-            async resolve(parent, args, context) {
+            async resolve(parent, args, { res, req }) {
 
                 try {
                     const user = await User.findById(args.userID);
@@ -203,6 +211,7 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                     user.accessToken = null;
                     await user.save();
                     return 'Logout Successful';
+                    // res.cookie('jwt', '', { httpOnly: true });
                 } 
                 catch (error) {
                     console.error(error);
@@ -210,7 +219,6 @@ const mutation /* <-- variable name */= new GraphQLObjectType({
                 }
                 
                 
-                // context.res.cookie('jwt', '', { httpOnly: true });
             }
         },
 
